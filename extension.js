@@ -1,37 +1,27 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
-const { Builder, By } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
 const cheerio = require('cheerio');
 const path = require('path');
+const axios = require('axios');
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 
 async function getHtml(problemNumber) {
-	// Set up Chrome WebDriver with headless option
-	const options = new chrome.Options().headless().addArguments('disable-gpu').addArguments('disable-infobars').addArguments('--disable-extensions');
-	const driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
+	const customHeaders = {
+		"User-Agent": "PostmanRuntime/7.33.0",
+	};
+	// Get the page source
+	const res = await axios.get('https://boj.kr/' + problemNumber, {headers: customHeaders});
 
-	try {
-			// Navigate to the website
-			await driver.get('https://boj.kr/' + problemNumber);
+	// Parse the HTML using cheerio
+	const $ = cheerio.load(res.data);
 
-			// Get the page source
-			const html = await driver.getPageSource();
-
-			// Parse the HTML using cheerio
-			const $ = cheerio.load(html);
-
-			// Find the div with id 'problem-body' and extract the text
-			const problemHtml = $('#problem-body').html();
-			console.log(problemHtml);
-			return problemHtml;
-	} finally {
-			// Quit the WebDriver session
-			await driver.quit();
-	}
+	// Find the div with id 'problem-body' and extract the text
+	const problemHtml = $('#problem-body').html();
+	console.log(problemHtml);
+	return problemHtml;
 }
 
 function extractFirstNumberFromString(inputString) {
